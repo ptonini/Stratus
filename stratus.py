@@ -9,7 +9,7 @@ from prettytable import PLAIN_COLUMNS, FRAME, ALL, NONE
 #mm.login(oauth_credentials='/home/ptonini/oauth.cred')
 
 api = Mobileclient()
-logged_in = api.login('pedro.tonini', 'besTeira07')
+logged_in = api.login('', '')
 
 songlist = api.get_all_songs()
 
