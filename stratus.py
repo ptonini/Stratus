@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from gmusicapi import Musicmanager
+import re
 import os
 
 from gmusicapi import Mobileclient
@@ -14,6 +15,7 @@ class Tracks:
 
     def __init__(self, file):
         """ """
+
         tag = ID3(file)
         self.filename = file
         self.genre = str(tag['TCON'].pprint())[5:]
@@ -24,38 +26,36 @@ class Tracks:
         self.trackNumber = int(str(tag['TRCK'].pprint())[5:])
         self.title = str(tag['TIT2'].pprint())[5:]
 
-    def checkGMusic(self):
-        return True
+
+    def matchSong(self, songlist):
+        """"""
+        matched = False
+        for song in songlist:
+            if song['title'] == self.title:
+                print self.title, '- is on Google Music'
+                matched = True
+                break
+        if not matched:
+            print '!!! Could not find "' + self.title + '" on Google Music'
 
 
-def __init__(self, user, password):
+def getSongList(user, password):
     api = Mobileclient()
     api.login('pedro.tonini', 'besTeira07')
     return api.get_all_songs()
 
+songlist = getSongList('pedro.tonini', 'besTeira07')
 
-songs = songlist[0]
-#for s in songs.iteritems:
-#    print s
-#    break
-
-t = PrettyTable(['Key', 'Value'])
-t.hrules = ALL
-t.header_style = 'upper'
-t.align = 'l'
-t.padding_width = 3
-song = songlist[0]
-for k, v in song.iteritems():
-    t.add_row([k, v])
-print t.get_string(sortby='Key')
-print len(songlist)
+for root, path, files in os.walk('/mnt/Musicas/01 Principal/Albums/AC DC/'):
+    for name in files:
+        p = re.compile('.*.mp3$')
+        if p.match(name):
+            file = os.path.join(root, name)
+            track = Tracks(file)
+            track.matchSong(songlist)
 
 
-#for root, path, files in os.walk('/mnt/Musicas/Google Music/AC DC'):
-#    for name in files:
-#        file = os.path.join(root, name)
-#/        track = Tracks(file)
-        #print track.genre, track.artist, track.year, track.album, track.trackNum, track.trackName
+e
 
 
 
