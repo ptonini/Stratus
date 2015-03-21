@@ -1,15 +1,27 @@
 #!/usr/bin/python
 
-from gmusicapi import Musicmanager
+
+#from gmusicapi import Musicmanager
 from gmusicapi import Mobileclient
-from tabulate import tabulate
 from prettytable import PrettyTable
 from prettytable import PLAIN_COLUMNS, FRAME, ALL, NONE
-
-import mutagen
-import eyeD3
-
 import os
+from mutagen.id3 import ID3
+
+
+class Tracks:
+   """"""
+    def __init__(self, file):
+        tag = ID3(file)
+        self.filename = file
+        self.genre = str(tag['TCON'].pprint())[5:]
+        self.artist = str(tag['TPE1'].pprint())[5:]
+        self.albumArtist = str(tag['TPE2'].pprint())[5:]
+        self.album = str(tag['TALB'].pprint())[5:]
+        self.year = int(str(tag['TDRC'].pprint())[5:])
+        self.trackNum = int(str(tag['TRCK'].pprint())[5:])
+        self.trackName = str(tag['TIT2'].pprint())[5:]
+
 
 
 def teste ():
@@ -35,10 +47,12 @@ def teste ():
 
 
 
-for root, dirs, files in os.walk('/mnt/Musicas/Google Music', topdown=False):
+for root, path,  files in os.walk('/mnt/Musicas/Google Music/AC DC'):
     for name in files:
-        print(os.path.join(root, name))
-
+        file = os.path.join(root, name)
+        track = Tracks(file)
+        print track.genre, track.artist, track.album, track.trackNum, track.trackName
+        print type(track.year)
 
 
 
