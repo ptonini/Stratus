@@ -5,7 +5,7 @@ import os
 
 from gmusicapi import Mobileclient
 from mutagen.id3 import ID3
-
+from pymongo import MongoClient
 
 class Tracks:
     """"""
@@ -28,21 +28,27 @@ class Tracks:
         """"""
         matched = False
         for song in songlist:
-            if song['title'] == self.title:
+            if song['title'] == self.title and song['albumArtist'] == self.albumArtist and song['album'] == self.album \
+                    and song['trackNumber'] == self.trackNumber:
                 print self.title, '- is on Google Music'
+                self.gmusic_id = song['id']
                 matched = True
                 break
         if not matched:
+            pass
             print '!!! Could not find "' + self.title + '" on Google Music'
 
 
 def getSongList(user, password):
     api = Mobileclient()
-    api.login('', '')
+    api.login(user, password)
     return api.get_all_songs()
 
 
-songlist = getSongList('pedro.tonini', 'besTeira07')
+songlist = getSongList('', '')
+client = MongoClient('mongodb://localhost:27017/')
+db = client.stratus
+trackColl = db.tracks
 
 for root, path, files in os.walk('/mnt/Musicas/01 Principal/Albums/AC DC/'):
     for name in files:
@@ -50,6 +56,9 @@ for root, path, files in os.walk('/mnt/Musicas/01 Principal/Albums/AC DC/'):
         if p.match(name):
             file = os.path.join(root, name)
             track = Tracks(file)
-            track.matchSong(songlist)
+            if trackColl.find({"filename": file}).count() == 0:
+                trackColl.insert(track.__dict__)
+            elif trackColl.find({"filename": file}).count() > 1:
+                print 'Error: duplicate tracks on database'
 
 
