@@ -1,12 +1,9 @@
 #!/usr/bin/python
 
-from gmusicapi import Musicmanager
 import re
 import os
 
 from gmusicapi import Mobileclient
-from prettytable import PrettyTable
-from prettytable import ALL
 from mutagen.id3 import ID3
 
 
@@ -41,8 +38,9 @@ class Tracks:
 
 def getSongList(user, password):
     api = Mobileclient()
-    api.login('pedro.tonini', 'besTeira07')
+    api.login('', '')
     return api.get_all_songs()
+
 
 songlist = getSongList('pedro.tonini', 'besTeira07')
 
@@ -53,9 +51,5 @@ for root, path, files in os.walk('/mnt/Musicas/01 Principal/Albums/AC DC/'):
             file = os.path.join(root, name)
             track = Tracks(file)
             track.matchSong(songlist)
-
-
-e
-
 
 
