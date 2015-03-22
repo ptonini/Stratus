@@ -41,24 +41,12 @@ def getSonglist(user, password):
     return api.get_all_songs()
 
 
-def buildTrackCollection(filelist, songlist, tracksColl):
-    #i = 1
-    for file in filelist:
-        track = Tracks(file, songlist)
-        trackCount = tracksColl.find({"filename": file}).count()
-        if trackCount == 0:
-            tracksColl.insert(track.__dict__)
-            #i += 1
-            #print i
-        elif trackCount > 1:
-            print 'Error: duplicate tracks on database'
-
-
 def openTracksCollection(database):
-    client = MongoClient()
+    client = MongoClient(database)
     db = client.stratus
     tracksColl = db.tracks
     return tracksColl
+
 
 def getFilelist(folder):
     filelist = []
@@ -70,11 +58,22 @@ def getFilelist(folder):
                 filelist.append(file)
     return filelist
 
+
+def buildTrackCollection(filelist, songlist, tracksColl):
+    for file in filelist:
+        track = Tracks(file, songlist)
+        trackCount = tracksColl.find({"filename": file}).count()
+        if trackCount == 0:
+            tracksColl.insert(track.__dict__)
+        elif trackCount > 1:
+            print 'Error: duplicate tracks on database'
+
+
 def main():
 
     songlist = getSonglist()
     tracksColl = openTracksCollection('mongodb://localhost:27017/')
-    filelist = getFilelist('/mnt/Musicas/01 Principal/Albums')
+    filelist = getFilelist('/mnt/Musicas/Google Music')
 
     buildTrackCollection(filelist, songlist, tracksColl)
 
