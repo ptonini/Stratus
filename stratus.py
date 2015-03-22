@@ -4,6 +4,8 @@
 
 import re
 import os
+import argparse
+import sys
 
 from gmusicapi import Mobileclient
 from mutagen.easyid3 import EasyID3
@@ -11,29 +13,32 @@ from pymongo import MongoClient
 
 
 class Tracks:
-
     def __init__(self, source):
-        """ """
         if isinstance(source, dict):
-             self.__dict__.update(source)
+            self.__dict__.update(source)
+            self.source = "db"
         elif os.path.isfile(source):
-            try:
-                tag = EasyID3(source)
-                self.filename = source
+            tag = EasyID3(source)
+            self.filename = source
+            self.source = 'file'
+            if 'genre' in tag:
                 self.genre = tag['genre'][0]
+            if 'artist' in tag:
                 self.artist = tag['artist'][0]
+            if 'performer' in tag:
                 self.albumArtist = tag['performer'][0]
+            if 'album' in tag:
                 self.album = tag['album'][0]
+            if "date" in tag:
                 self.year = tag['date'][0]
+            if 'tracknumber' in tag:
                 self.trackNumber = tag['tracknumber'][0]
+            if 'title' in tag:
                 self.title = tag['title'][0]
-                if 'discnumber' in tag:
-                    self.discNumber = tag['discnumber'][0]
-
-            except:
-                print source
+            if 'discnumber' in tag:
+                self.discNumber = tag['discnumber'][0]
         else:
-            print 'Undefined source'
+            print 'Unable to create instance: undefined source: ' + str(source)
 
 
 def getSonglist(user, password):
@@ -60,7 +65,8 @@ def getFilelist(folder):
     return filelist
 
 
-def buildTracksCollection(filelist, tracksColl):
+def buildTracksCollection(tracksColl, filelist):
+
     for file in filelist:
         track = Tracks(file)
         trackCount = tracksColl.find({"filename": file}).count()
@@ -70,17 +76,32 @@ def buildTracksCollection(filelist, tracksColl):
             print 'Error: duplicate tracks on database'
 
 
+def matchTrackToSong(tracksColl, songlist):
+
+    for doc in tracksColl.find():
+        track = Tracks(doc)
+        for song in songlist:
+            if song['title'] == track.title and song['albumArtist'] == track.albumArtist and song['album'] == track.album:
+                setattr(track, 'gmusic_id', song['id'])
+                break
+        tracksColl.update({'_id': track._id}, track.__dict__)
+
+
 def main():
 
-    #songlist = getSonglist('')
-    tracksColl = openTracksCollection('mongodb://localhost:27017/')
-    filelist = getFilelist('/mnt/Musicas/Google Music/AC DC')
-    buildTracksCollection(filelist, tracksColl)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', dest='root', required=True, help='Hostname')
+    parser.add_argument('-d', dest='db', required=True, help='Database')
+    parser.add_argument('-U', dest='user', required=True, help='Username')
+    parser.add_argument('-P', dest='password', required=True, help='Password')
+    args = parser.parse_args(sys.argv[1:])
 
-    for document in tracksColl.find():
-        track = Tracks(document)
-        print track.title
+    tracksColl = openTracksCollection(args.db)
+    filelist = getFilelist(args.root)
+    songlist = getSonglist(args.user, args.password)
 
+    buildTracksCollection(tracksColl, filelist)
+    matchTrackToSong(tracksColl, songlist)
 
 
 
@@ -88,7 +109,3 @@ if __name__ == '__main__':
     main()
 
 
-# for song in songlist:
-                #     if song['title'] == self.title and song['albumArtist'] == self.albumArtist and song['album'] == self.album:
-                #         self.gmusic_id = song['id']
-                #         break
