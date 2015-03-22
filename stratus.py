@@ -11,28 +11,29 @@ from pymongo import MongoClient
 
 
 class Tracks:
-    """"""
 
-    def __init__(self, file, songlist):
+    def __init__(self, source):
         """ """
-        try:
-            tags = EasyID3(file)
-            self.filename = file
-            self.genre = tags['genre'][0]
-            self.artist = tags['artist'][0]
-            self.albumArtist = tags['performer'][0]
-            self.album = tags['album'][0]
-            self.year = tags['date'][0]
-            self.trackNumber = tags['tracknumber'][0]
-            self.title = tags['title'][0]
-            if 'discnumber' in tags:
-                self.discNumber = tags[u'discnumber'][0]
-            for song in songlist:
-                if song['title'] == self.title and song['albumArtist'] == self.albumArtist and song['album'] == self.album:
-                    self.gmusic_id = song['id']
-                    break
-        except:
-            print file
+        if isinstance(source, dict):
+             self.__dict__.update(source)
+        elif os.path.isfile(source):
+            try:
+                tag = EasyID3(source)
+                self.filename = source
+                self.genre = tag['genre'][0]
+                self.artist = tag['artist'][0]
+                self.albumArtist = tag['performer'][0]
+                self.album = tag['album'][0]
+                self.year = tag['date'][0]
+                self.trackNumber = tag['tracknumber'][0]
+                self.title = tag['title'][0]
+                if 'discnumber' in tag:
+                    self.discNumber = tag['discnumber'][0]
+
+            except:
+                print source
+        else:
+            print 'Undefined source'
 
 
 def getSonglist(user, password):
@@ -59,9 +60,9 @@ def getFilelist(folder):
     return filelist
 
 
-def buildTrackCollection(filelist, songlist, tracksColl):
+def buildTracksCollection(filelist, tracksColl):
     for file in filelist:
-        track = Tracks(file, songlist)
+        track = Tracks(file)
         trackCount = tracksColl.find({"filename": file}).count()
         if trackCount == 0:
             tracksColl.insert(track.__dict__)
@@ -71,12 +72,23 @@ def buildTrackCollection(filelist, songlist, tracksColl):
 
 def main():
 
-    songlist = getSonglist()
+    #songlist = getSonglist('')
     tracksColl = openTracksCollection('mongodb://localhost:27017/')
-    filelist = getFilelist('/mnt/Musicas/Google Music')
+    filelist = getFilelist('/mnt/Musicas/Google Music/AC DC')
+    buildTracksCollection(filelist, tracksColl)
 
-    buildTrackCollection(filelist, songlist, tracksColl)
+    for document in tracksColl.find():
+        track = Tracks(document)
+        print track.title
+
+
 
 
 if __name__ == '__main__':
     main()
+
+
+# for song in songlist:
+                #     if song['title'] == self.title and song['albumArtist'] == self.albumArtist and song['album'] == self.album:
+                #         self.gmusic_id = song['id']
+                #         break
