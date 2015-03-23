@@ -6,9 +6,11 @@ import re
 import os
 import argparse
 import sys
+import json
 
 from gmusicapi import Mobileclient
 from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
 from pymongo import MongoClient
 
 
@@ -37,6 +39,14 @@ class Tracks:
                 self.title = tag['title'][0]
             if 'discnumber' in tag:
                 self.discNumber = tag['discnumber'][0]
+            else:
+                self.discNumber = "1"
+
+            audio = MP3(source)
+            self.length = int(audio.info.length)
+
+            #print json.dumps(self.__dict__)
+
         else:
             print 'Unable to create instance: undefined source: ' + str(source)
 
@@ -50,8 +60,8 @@ def getSonglist(user, password):
 def openTracksCollection(database):
     client = MongoClient(database)
     db = client.stratus
-    tracksColl = db.tracks
-    return tracksColl
+#    db.tracks.drop()
+    return db.tracks
 
 
 def getFilelist(folder):
@@ -62,11 +72,12 @@ def getFilelist(folder):
             if p.match(name):
                 file = os.path.join(root, name)
                 filelist.append(file)
+    print 'filelist', len(filelist)
     return filelist
 
 
 def buildTracksCollection(tracksColl, filelist):
-
+    i = 0
     for file in filelist:
         track = Tracks(file)
         trackCount = tracksColl.find({"filename": file}).count()
@@ -77,29 +88,37 @@ def buildTracksCollection(tracksColl, filelist):
 
 
 def matchTrackToSong(tracksColl, songlist):
-
+    matched = []
+    notmatched = []
+    print 'songlist', len(songlist)
+    print 'docs', tracksColl.find().count()
     for doc in tracksColl.find():
         track = Tracks(doc)
         for song in songlist:
-            if song['title'] == track.title and song['albumArtist'] == track.albumArtist and song['album'] == track.album:
+            length = int(song['durationMillis']) / 1000
+            if song['title'] == track.title and song['album'] == track.album: #and (track.length - 2) < length < (track.length + 2):
+               # print 'matched "' + track.filename + ' -------> "' + song['title']
+                matched.append(True)
                 setattr(track, 'gmusic_id', song['id'])
+                tracksColl.update({'_id': track._id}, track.__dict__)
                 break
-        tracksColl.update({'_id': track._id}, track.__dict__)
 
+    for doc in tracksColl.find():
+        if 'gmusic_id' not in doc:
+            notmatched.append(True)
+            #print doc['filename']
+    print 'matched', len(matched)
+    print 'not matched', len(notmatched)
 
 def main():
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-r', dest='root', required=True, help='Hostname')
-    parser.add_argument('-d', dest='db', required=True, help='Database')
-    parser.add_argument('-U', dest='user', required=True, help='Username')
-    parser.add_argument('-P', dest='password', required=True, help='Password')
-    args = parser.parse_args(sys.argv[1:])
 
-    tracksColl = openTracksCollection(args.db)
-    filelist = getFilelist(args.root)
-    songlist = getSonglist(args.user, args.password)
 
+    tracksColl = openTracksCollection('mongodb://localhost:27017')
+    filelist = getFilelist('/mnt/Musicas/Google Music')
+    songlist = getSonglist(sys.argv[1], sys.argv[2])
+
+    #
     buildTracksCollection(tracksColl, filelist)
     matchTrackToSong(tracksColl, songlist)
 
