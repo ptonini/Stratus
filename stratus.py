@@ -12,7 +12,7 @@ from gmusicapi import Mobileclient
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 from pymongo import MongoClient
-
+from gmusicapi import Musicmanager
 
 class Tracks:
     def __init__(self, source):
@@ -77,38 +77,30 @@ def getFilelist(folder):
 
 
 def buildTracksCollection(tracksColl, filelist):
-    i = 0
     for file in filelist:
         track = Tracks(file)
         trackCount = tracksColl.find({"filename": file}).count()
         if trackCount == 0:
             tracksColl.insert(track.__dict__)
+        elif trackCount == 1:
+            pass
         elif trackCount > 1:
             print 'Error: duplicate tracks on database'
 
 
-def matchTrackToSong(tracksColl, songlist):
-    matched = []
-    notmatched = []
-    print 'songlist', len(songlist)
-    print 'docs', tracksColl.find().count()
+def uploadTracks(tracksColl):
+    mm = Musicmanager()
+    mm.login(oauth_credentials='./oauth.cred')
     for doc in tracksColl.find():
         track = Tracks(doc)
         for song in songlist:
             length = int(song['durationMillis']) / 1000
-            if song['title'] == track.title and song['album'] == track.album: #and (track.length - 2) < length < (track.length + 2):
-               # print 'matched "' + track.filename + ' -------> "' + song['title']
+            if song['title'] == track.title and song['album'] == track.album:
                 matched.append(True)
                 setattr(track, 'gmusic_id', song['id'])
                 tracksColl.update({'_id': track._id}, track.__dict__)
                 break
 
-    for doc in tracksColl.find():
-        if 'gmusic_id' not in doc:
-            notmatched.append(True)
-            #print doc['filename']
-    print 'matched', len(matched)
-    print 'not matched', len(notmatched)
 
 def main():
 
@@ -116,11 +108,10 @@ def main():
 
     tracksColl = openTracksCollection('mongodb://localhost:27017')
     filelist = getFilelist('/mnt/Musicas/Google Music')
-    songlist = getSonglist(sys.argv[1], sys.argv[2])
+    #songlist = getSonglist(sys.argv[1], sys.argv[2])
 
-    #
     buildTracksCollection(tracksColl, filelist)
-    matchTrackToSong(tracksColl, songlist)
+    uploadTracks(tracksColl)
 
 
 
