@@ -14,15 +14,21 @@ from mutagen.mp3 import MP3
 from pymongo import MongoClient
 from gmusicapi import Musicmanager
 
+import warnings
+warnings.filterwarnings('ignore')
+
+
 class Tracks:
     def __init__(self, source):
         if isinstance(source, dict):
             self.__dict__.update(source)
             self.source = "db"
         elif os.path.isfile(source):
+            audio = MP3(source)
             tag = EasyID3(source)
-            self.filename = source
             self.source = 'file'
+            self.filename = source
+            self.length = audio.info.length
             if 'genre' in tag:
                 self.genre = tag['genre'][0]
             if 'artist' in tag:
@@ -42,8 +48,7 @@ class Tracks:
             else:
                 self.discNumber = "1"
 
-            audio = MP3(source)
-            self.length = int(audio.info.length)
+
 
             #print json.dumps(self.__dict__)
 
@@ -60,7 +65,7 @@ def getSonglist(user, password):
 def openTracksCollection(database):
     client = MongoClient(database)
     db = client.stratus
-#    db.tracks.drop()
+    #db.tracks.drop()
     return db.tracks
 
 
@@ -79,7 +84,7 @@ def getFilelist(folder):
 def buildTracksCollection(tracksColl, filelist):
     for file in filelist:
         track = Tracks(file)
-        trackCount = tracksColl.find({"filename": file}).count()
+        trackCount = tracksColl.find({'filename': file}).count()
         if trackCount == 0:
             tracksColl.insert(track.__dict__)
         elif trackCount == 1:
@@ -88,30 +93,32 @@ def buildTracksCollection(tracksColl, filelist):
             print 'Error: duplicate tracks on database'
 
 
-def uploadTracks(tracksColl):
+def uploadTracks(tracksColl, cred):
     mm = Musicmanager()
-    mm.login(oauth_credentials='./oauth.cred')
-    for doc in tracksColl.find():
-        track = Tracks(doc)
-        for song in songlist:
-            length = int(song['durationMillis']) / 1000
-            if song['title'] == track.title and song['album'] == track.album:
-                matched.append(True)
-                setattr(track, 'gmusic_id', song['id'])
-                tracksColl.update({'_id': track._id}, track.__dict__)
-                break
-
+    if mm.login(oauth_credentials=cred):
+        for doc in tracksColl.find():
+            track = Tracks(doc)
+            print 'uploading', track.filename
+            result = mm.upload(track.filename, enable_matching=True)
+            if not result[0] == {}:
+                print track.filename, 'uploaded\n'
+                gmusic_id = result[0][track.filename]
+            elif not result[2] == {}:
+                print track.filename, 'already exists\n'
+                gmusic_id = re.search("\((.*)\)", str(result[2])).group(1)
+            setattr(track, 'gmusic_id', gmusic_id)
+            tracksColl.update({'_id': track._id}, track.__dict__)
 
 def main():
 
 
 
     tracksColl = openTracksCollection('mongodb://localhost:27017')
-    filelist = getFilelist('/mnt/Musicas/Google Music')
-    #songlist = getSonglist(sys.argv[1], sys.argv[2])
+    filelist = getFilelist('/mnt/Musicas/Google Music/AC DC')
+    #songlist = getSonglist(sys.argv[1], sys.arv[2])
 
     buildTracksCollection(tracksColl, filelist)
-    uploadTracks(tracksColl)
+    uploadTracks(tracksColl, './oauth.cred')
 
 
 
