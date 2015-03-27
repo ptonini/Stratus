@@ -4,18 +4,17 @@
 
 import re
 import os
-import argparse
-import sys
-import json
+
+import time
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
 
 from gmusicapi import Mobileclient
+from gmusicapi import Musicmanager
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 from pymongo import MongoClient
-from gmusicapi import Musicmanager
-
 import warnings
-warnings.filterwarnings('ignore')
 
 
 class Tracks:
@@ -47,13 +46,14 @@ class Tracks:
                 self.discNumber = tag['discnumber'][0]
             else:
                 self.discNumber = "1"
-
-
-
-            #print json.dumps(self.__dict__)
-
         else:
             print 'Unable to create instance: undefined source: ' + str(source)
+    def deleteFromDb(self, TracksColl):
+        pass
+    def deleteFromDisk(self):
+        pass
+    def deleteFromGMusic(self, cred):
+        pass
 
 
 def getSonglist(user, password):
@@ -109,9 +109,8 @@ def uploadTracks(tracksColl, cred):
             setattr(track, 'gmusic_id', gmusic_id)
             tracksColl.update({'_id': track._id}, track.__dict__)
 
+
 def main():
-
-
 
     tracksColl = openTracksCollection('mongodb://localhost:27017')
     filelist = getFilelist('/mnt/Musicas/Google Music/AC DC')
@@ -121,8 +120,10 @@ def main():
     uploadTracks(tracksColl, './oauth.cred')
 
 
-
 if __name__ == '__main__':
+
+    warnings.filterwarnings('ignore')
+
     main()
 
 
