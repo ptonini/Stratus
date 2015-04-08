@@ -11,65 +11,27 @@ from watchdog.events import PatternMatchingEventHandler
 
 from gmusicapi import Mobileclient
 from gmusicapi import Musicmanager
-from mutagen.easyid3 import EasyID3
-from mutagen.mp3 import MP3
+
 from pymongo import MongoClient
 import warnings
 
 
-class Tracks:
-    def __init__(self, source):
-        if isinstance(source, dict):
-            self.__dict__.update(source)
-            self.source = "db"
-        elif os.path.isfile(source):
-            audio = MP3(source)
-            tag = EasyID3(source)
-            self.source = 'file'
-            self.filename = source
-            self.length = audio.info.length
-            if 'genre' in tag:
-                self.genre = tag['genre'][0]
-            if 'artist' in tag:
-                self.artist = tag['artist'][0]
-            if 'performer' in tag:
-                self.albumArtist = tag['performer'][0]
-            if 'album' in tag:
-                self.album = tag['album'][0]
-            if "date" in tag:
-                self.year = tag['date'][0]
-            if 'tracknumber' in tag:
-                self.trackNumber = tag['tracknumber'][0]
-            if 'title' in tag:
-                self.title = tag['title'][0]
-            if 'discnumber' in tag:
-                self.discNumber = tag['discnumber'][0]
-            else:
-                self.discNumber = "1"
-        else:
-            print 'Unable to create instance: undefined source: ' + str(source)
-    def deleteFromDb(self, TracksColl):
-        pass
-    def deleteFromDisk(self):
-        pass
-    def deleteFromGMusic(self, cred):
-        pass
 
 
-def getSonglist(user, password):
+def get_song_list(user, password):
     api = Mobileclient()
     api.login(user, password)
     return api.get_all_songs()
 
 
-def openTracksCollection(database):
+def open_tracks_collection(database):
     client = MongoClient(database)
     db = client.stratus
     #db.tracks.drop()
     return db.tracks
 
 
-def getFilelist(folder):
+def get_file_list(folder):
     filelist = []
     for root, path, files in os.walk(folder):
         for name in files:
@@ -81,22 +43,22 @@ def getFilelist(folder):
     return filelist
 
 
-def buildTracksCollection(tracksColl, filelist):
+def build_tracks_collection(tracks_collection, filelist):
     for file in filelist:
         track = Tracks(file)
-        trackCount = tracksColl.find({'filename': file}).count()
+        trackCount = tracks_collection.find({'filename': file}).count()
         if trackCount == 0:
-            tracksColl.insert(track.__dict__)
+            tracks_collection.insert(track.__dict__)
         elif trackCount == 1:
             pass
         elif trackCount > 1:
             print 'Error: duplicate tracks on database'
 
 
-def uploadTracks(tracksColl, cred):
+def upload_tracks(tracks_collection, cred):
     mm = Musicmanager()
     if mm.login(oauth_credentials=cred):
-        for doc in tracksColl.find():
+        for doc in tracks_collection.find():
             track = Tracks(doc)
             print 'uploading', track.filename
             result = mm.upload(track.filename, enable_matching=True)
@@ -107,17 +69,17 @@ def uploadTracks(tracksColl, cred):
                 print track.filename, 'already exists\n'
                 gmusic_id = re.search("\((.*)\)", str(result[2])).group(1)
             setattr(track, 'gmusic_id', gmusic_id)
-            tracksColl.update({'_id': track._id}, track.__dict__)
+            tracks_collection.update({'_id': track._id}, track.__dict__)
 
 
 def main():
 
-    tracksColl = openTracksCollection('mongodb://localhost:27017')
-    filelist = getFilelist('/mnt/Musicas/Google Music/AC DC')
+    tracks_collection = open_tracks_collection('mongodb://localhost:27017')
+    filelist = get_file_list('/mnt/Musicas/Google Music/AC DC')
     #songlist = getSonglist(sys.argv[1], sys.arv[2])
 
-    buildTracksCollection(tracksColl, filelist)
-    uploadTracks(tracksColl, './oauth.cred')
+    build_tracks_collection(tracks_collection, filelist)
+    upload_tracks(tracks_collection, './oauth.cred')
 
 
 if __name__ == '__main__':
