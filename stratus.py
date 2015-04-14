@@ -22,7 +22,7 @@ import warnings
 def open_tracks_collection(database):
     client = MongoClient(database)
     db = client.stratus
-    #db.tracks.drop()
+    db.tracks.drop()
     return db.tracks
 
 
@@ -35,17 +35,33 @@ def open_gmusic(cred):
         sys.exit(1)
 
 
-def get_file_list(folder):
+def get_filelist(folder):
     filelist = []
     for root, path, files in os.walk(folder):
         for name in files:
-            p = re.compile('.*.mp3$')
-            if p.match(name):
+            if re.match('.*.mp3$', name):
                 root = root.replace(folder, '')
                 file = os.path.join(root, name)
                 filelist.append([folder, file])
     print 'filelist', len(filelist)
     return filelist
+
+def get_playlists(folder):
+    playlists = dict()
+    for root, path, files in os.walk(folder):
+        for name in files:
+            if re.match('.*.m3u$', name):
+                playlist = name[:-4]
+                playlists[playlist] = list()
+                with open(os.path.join(root, name), 'r+') as file:
+                    for line in file.readlines():
+                        if line != '\n':
+                            playlists[playlist].append(line[:-1])
+    for playlist in playlists:
+        print playlist
+        for index, track in enumerate(playlists.get(playlist)):
+            print (index + 1), track
+
 
 
 def get_song_list(user, password):
@@ -57,8 +73,10 @@ def get_song_list(user, password):
 def build_db(tracks_collection, filelist):
     for folder, file in filelist:
         track = classes.Tracks(file, type='file', path=folder)
+
         trackCount = tracks_collection.find({'filename': file}).count()
         if trackCount == 0:
+            pass
             tracks_collection.insert(track.__dict__)
         elif trackCount == 1:
             pass
@@ -76,14 +94,15 @@ def sync_disk_to_gmusic(tracks_collection, mm):
 
 def main():
 
-    gmusic_mm = open_gmusic('./oauth.cred')
-    tracks_collection = open_tracks_collection('mongodb://localhost:27017')
+    #gmusic_mm = open_gmusic('./oauth.cred')
+    #tracks_collection = open_tracks_collection('mongodb://localhost:27017')
 
-    #filelist = get_file_list('/home/ptonini/Música')
+    #filelist = get_filelist('/home/ptonini/Música')
+    get_playlists('/home/ptonini/Música/0-Playlists')
     #songlist = getSonglist(sys.argv[1], sys.arv[2])
 
     #build_db(tracks_collection, filelist)
-    sync_disk_to_gmusic(tracks_collection, gmusic_mm)
+    #sync_disk_to_gmusic(tracks_collection, gmusic_mm)
 
 
 if __name__ == '__main__':

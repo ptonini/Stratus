@@ -3,9 +3,10 @@ __author__ = 'ptonini'
 import os
 import re
 
-from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
-
+from mutagen.easyid3 import EasyID3
+from mutagen import File
+import bson.binary
 
 class Tracks:
     def __init__(self, object, type, path=''):
@@ -15,12 +16,14 @@ class Tracks:
             try:
                 os.path.isfile(path + object)
             except:
-                print 'Invalid filname' , path + object
+                print 'Invalid file' , path + object
             audio = MP3(path + object)
             tag = EasyID3(path + object)
+            file = File(path + object)
             self.filename = object
             self.path = path
             self.length = audio.info.length
+            self.coverart = bson.binary.Binary(file.tags['APIC:'].data)
             if 'genre' in tag:
                 self.genre = tag['genre'][0]
             if 'artist' in tag:
