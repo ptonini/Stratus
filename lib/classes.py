@@ -46,45 +46,42 @@ class Tracks:
         else:
             print 'Unable to create instance'
 
-    def add_to_gmusic(self, mm):
-        fullname = self.path + self.filename
-        r = mm.upload(fullname, enable_matching=True)
-        if not r[0] == {}:
-            self.gmusic_id = r[0][fullname]
-            print 'Uploaded:', self.filename
-        elif not r[1] == {}:
-            self.gmusic_id = r[1][fullname]
-            print 'Matched:', self.filename
-        elif not r[2] == {}:
-            if 'TrackSampleResponse code 4' in r[2][fullname]:
-                self.gmusic_id = re.search("\((.*)\)", str(r[2])).group(1)
-                print 'Exists:', self.filename
-            else:
-                print 'Error: could no upload or match', self.filename
+    def update_gmusic(self, mm):
+        if not hasattr(self, 'gmusic_id'):
+            fullname = self.path + self.filename
+            r = mm.upload(fullname, enable_matching=True)
+            if not r[0] == {}:
+                self.gmusic_id = r[0][fullname]
+                print 'Uploaded:', self.filename
+            elif not r[1] == {}:
+                self.gmusic_id = r[1][fullname]
+                print 'Matched:', self.filename
+            elif not r[2] == {}:
+                if 'TrackSampleResponse code 4' in r[2][fullname]:
+                    self.gmusic_id = re.search("\((.*)\)", str(r[2])).group(1)
+                    print 'Exists:', self.filename
+                else:
+                    print 'Error: could no upload or match', self.filename
 
-    def delete_from_db(self, tracks_collection):
-        pass
+    def update_db(self, db):
+        if hasattr(self, '_id'):
+            db.tracks.update({'_id': self._id}, self.__dict__)
+        else:
+            track_count = db.tracks.find({'filename': self.filename}).count()
+            if track_count == 0:
+                db.tracks.insert(self.__dict__)
+            elif track_count == 1:
+                pass
+            elif track_count > 1:
+                print 'Error: duplicate tracks on database'
 
-    def delete_from_disk(self):
+
+    def delete_from_db(self, db):
         pass
 
     def delete_from_gmusic(self, mm):
         pass
 
-    def delete_from_device(self):
-        pass
-
-    def is_on_db(self):
-        pass
-
-    def is_on_disk(self):
-        pass
-
-    def is_on_gmusic(self):
-        pass
-
-    def is_on_device(self):
-        pass
 
 
 class Playlists:

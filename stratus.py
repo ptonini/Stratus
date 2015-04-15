@@ -31,27 +31,19 @@ def build_db(db, tracklist, playlists):
 
     for folder, root, file in tracklist:
         track = classes.Tracks(file, type='file', path=folder)
-        track_count = db.tracks.find({'filename': file}).count()
-        if track_count == 0:
-            pass
-            db.tracks.insert(track.__dict__)
-        elif track_count == 1:
-            pass
-        elif track_count > 1:
-            print 'Error: duplicate tracks on database'
+        track.update_db(db)
 
     for folder, root, file in playlists:
         playlist = classes.Playlists([folder, file], type='list')
 
-        print json.dumps(playlist.__dict__)
+        #print json.dumps(playlist.__dict__)
 
 
-def sync_disk_to_gmusic(tracks_collection, mm):
-    for dict in tracks_collection.find():
+def sync_disk_to_gmusic(db, mm):
+    for dict in db.tracks.find():
         track = classes.Tracks(dict, type='dict')
-        if not hasattr(track, 'gmusic_id'):
-            track.add_to_gmusic(mm)
-            tracks_collection.update({'_id': track._id}, track.__dict__)
+        track.update_gmusic(mm)
+        track.update_db(db)
 
 
 def main():
@@ -65,7 +57,7 @@ def main():
     #songlist = getSonglist(sys.argv[1], sys.arv[2])
 
     build_db(db, tracklist, playlists)
-    #sync_disk_to_gmusic(tracks_collection, mm)
+    sync_disk_to_gmusic(db, mm)
 
 
 if __name__ == '__main__':
