@@ -2,6 +2,7 @@ __author__ = 'ptonini'
 
 import os
 import re
+import time
 
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
@@ -61,7 +62,7 @@ class Tracks:
             else:
                 print 'Error: could no upload or match', self.filename
 
-    def delete_from_db(self, TracksColl):
+    def delete_from_db(self, tracks_collection):
         pass
 
     def delete_from_disk(self):
@@ -87,5 +88,18 @@ class Tracks:
 
 
 class Playlists:
-    def __init__(self):
-        pass
+    def __init__(self, object, type):
+        if type == 'list':
+            self.full_filename = os.path.join(object[0], object[1])
+            self.name = object[1][:-4]
+            self.timestamp = time.ctime(os.path.getmtime(self.full_filename))
+            self.tracks = list()
+            with open(self.full_filename, 'r+') as file:
+                for line in file.readlines():
+                    if line != '\n':
+                        self.tracks.append([line[:-1]])
+
+    def __get_gmusic_ids(self):
+        for track in self.tracks:
+            pass
+
