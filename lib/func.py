@@ -3,8 +3,10 @@ __author__ = 'ptonini'
 import re
 import os
 import sys
+
 from gmusicapi import Musicmanager
 from pymongo import MongoClient
+from gmusicapi import Mobileclient
 
 
 def open_db(database):
@@ -31,3 +33,10 @@ def get_filelist(folder, pattern):
                 file = os.path.join(root, file)
                 filelist.append([folder, root, file])
     return filelist
+
+
+def get_song_list(user, password):
+    api = Mobileclient()
+    api.login(user, password)
+    return api.get_all_songs()
+
