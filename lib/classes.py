@@ -98,10 +98,6 @@ class Playlists:
                     if line != '\n':
                         self.tracks.append([line[:-1]])
 
-    def __get_gmusic_ids(self):
-        for track in self.tracks:
-            pass
-
     def update_db(self, db):
         if hasattr(self, '_id'):
             dict = db.playlists.find_one({'_id': self._id})
