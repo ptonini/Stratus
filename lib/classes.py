@@ -92,8 +92,8 @@ class Playlists:
             self.full_filename = os.path.join(object[0], object[1])
             self.name = object[1][:-4]
             self.timestamp = time.ctime(os.path.getmtime(self.full_filename))
-            self.tracks = list()
             with open(self.full_filename, 'r+') as file:
+                self.tracks = list()
                 for line in file.readlines():
                     if line != '\n':
                         self.tracks.append([line[:-1]])
