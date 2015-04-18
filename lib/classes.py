@@ -85,7 +85,7 @@ class Tracks:
 
 
 class Playlists:
-    def __init__(self, object, type):
+    def __init__(self, db, object, type):
         if type == 'dict':
             self.__dict__.update(object)
         elif type == 'list':
@@ -96,18 +96,16 @@ class Playlists:
                 self.tracks = list()
                 for line in file.readlines():
                     if line != '\n':
-                        self.tracks.append([line[:-1]])
+                        self.tracks.append([db.tracks.find_one({'filename': line[:-1]})['_id']])
 
     def update_db(self, db):
         if hasattr(self, '_id'):
             dict = db.playlists.find_one({'_id': self._id})
             if dict != self.__dict__:
                 db.playlists.update({'_id': self._id}, self.__dict__)
-            else: print 'no need for update'
+            else:
+                print 'no need for update'
         else:
-            print "oi"
-            for index, track in enumerate(self.tracks):
-                self.tracks[index].append(db.tracks.find_one({'filename': track[0]})['_id'])
             playlist_count = db.playlists.find({'name': self.name}).count()
             if playlist_count == 0:
                 db.playlists.insert(self.__dict__)
