@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-
 import warnings
 
 import lib.classes as classes
@@ -23,23 +22,24 @@ def main():
 
 
     for folder, root, file in tracklist:
-        track = classes.Tracks(file, type='file', path=folder)
+        metadata = func.get_metadata_from(file, folder)
+        track = classes.Tracks(metadata)
         #track.update_gmusic(mm)
         track.update_db(db)
         pass
 
     for folder, root, file in playlists:
-        playlist = classes.Playlists(db, [folder, file], type='list')
-        playlist.update_db(db)
+        #playlist = classes.Playlists(dict, db)
+        #playlist.update_db(db)
         pass
 
-    for dict in db.tracks.find():
-        #track = classes.Tracks(dict, type='dict')
-        #print track.filename
+    for metadata in db.tracks.find():
+        track = classes.Tracks(metadata)
+        print track.filename
         pass
 
     for dict in db.playlists.find():
-        playlist = classes.Playlists(db, dict, type='dict')
+        playlist = classes.Playlists(dict, db)
         for track_ids in playlist.tracks:
             print db.tracks.find_one({'_id': track_ids[0]})['filename']
         pass

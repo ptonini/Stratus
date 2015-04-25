@@ -7,7 +7,10 @@ import sys
 from gmusicapi import Musicmanager
 from pymongo import MongoClient
 from gmusicapi import Mobileclient
-
+from mutagen.mp3 import MP3
+from mutagen.easyid3 import EasyID3
+from mutagen import File
+import bson.binary
 
 def open_db(database):
     client = MongoClient(database)
@@ -33,6 +36,44 @@ def get_filelist(folder, pattern):
                 file = os.path.join(root, file)
                 filelist.append([folder, root, file])
     return filelist
+
+
+def get_metadata_from(filename, path):
+    full_filename = path + filename
+    try:
+        os.path.isfile(full_filename)
+        audio = MP3(full_filename)
+        tag = EasyID3(full_filename)
+        file = File(full_filename)
+    except Exception:
+        print 'Invalid file', full_filename
+    else:
+        metadata = dict()
+        metadata['filename'] = filename
+        metadata['path'] = path
+        metadata['full_filename'] = full_filename
+        metadata['length'] = audio.info.length
+        metadata['coverart'] = bson.binary.Binary(file.tags['APIC:'].data)
+        if 'genre' in tag:
+            metadata['genre'] = tag['genre'][0]
+        if 'artist' in tag:
+            metadata['artist'] = tag['artist'][0]
+        if 'performer' in tag:
+            metadata['album_artist'] = tag['performer'][0]
+        if 'album' in tag:
+            metadata['album'] = tag['album'][0]
+        if "date" in tag:
+            metadata['year'] = tag['date'][0]
+        if 'tracknumber' in tag:
+            metadata['track_num'] = tag['tracknumber'][0]
+        if 'title' in tag:
+            metadata['title'] = tag['title'][0]
+        if 'discnumber' in tag:
+            metadata['disc_num'] = tag['discnumber'][0]
+        else:
+            metadata['disc_num'] = "1"
+        return metadata
+
 
 
 def get_song_list(user, password):
