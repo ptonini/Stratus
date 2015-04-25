@@ -2,7 +2,7 @@ __author__ = 'ptonini'
 
 import os
 import re
-import time
+
 
 
 
@@ -48,18 +48,8 @@ class Tracks:
 
 
 class Playlists:
-    def __init__(self, db, object, type):
-        if type == 'dict':
-            self.__dict__.update(object)
-        elif type == 'list':
-            self.full_filename = os.path.join(object[0], object[1])
-            self.name = object[1][:-4]
-            self.timestamp = time.ctime(os.path.getmtime(self.full_filename))
-            with open(self.full_filename, 'r+') as file:
-                self.tracks = list()
-                for line in file.readlines():
-                    if line != '\n':
-                        self.tracks.append([db.tracks.find_one({'filename': line[:-1]})['_id']])
+    def __init__(self, listinfo):
+        self.__dict__.update(listinfo)
 
     def update_db(self, db):
         if hasattr(self, '_id'):

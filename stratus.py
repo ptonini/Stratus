@@ -22,26 +22,27 @@ def main():
 
 
     for folder, root, file in tracklist:
-        metadata = func.get_metadata_from(file, folder)
-        track = classes.Tracks(metadata)
+        trackinfo = func.get_trackinfo_from(file, folder)
+        track = classes.Tracks(trackinfo)
         #track.update_gmusic(mm)
         track.update_db(db)
         pass
 
     for folder, root, file in playlists:
-        #playlist = classes.Playlists(dict, db)
-        #playlist.update_db(db)
+        listinfo = func.get_list_from(file, folder, db)
+        playlist = classes.Playlists(listinfo)
+        playlist.update_db(db)
         pass
 
-    for metadata in db.tracks.find():
-        track = classes.Tracks(metadata)
-        print track.filename
+    for trackinfo in db.tracks.find():
+        track = classes.Tracks(trackinfo)
+#        print track.filename
         pass
 
     for dict in db.playlists.find():
-        playlist = classes.Playlists(dict, db)
+        playlist = classes.Playlists(dict)
         for track_ids in playlist.tracks:
-            print db.tracks.find_one({'_id': track_ids[0]})['filename']
+            print db.tracks.find_one({'_id': track_ids})['filename']
         pass
 
 

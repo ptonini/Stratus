@@ -3,6 +3,8 @@ __author__ = 'ptonini'
 import re
 import os
 import sys
+import time
+
 
 from gmusicapi import Musicmanager
 from pymongo import MongoClient
@@ -38,7 +40,7 @@ def get_filelist(folder, pattern):
     return filelist
 
 
-def get_metadata_from(filename, path):
+def get_trackinfo_from(filename, path):
     full_filename = path + filename
     try:
         os.path.isfile(full_filename)
@@ -73,6 +75,19 @@ def get_metadata_from(filename, path):
         else:
             metadata['disc_num'] = "1"
         return metadata
+
+
+def get_list_from(filename, path, db):
+    metadata = dict()
+    metadata['full_filename'] = os.path.join(path, filename)
+    metadata['name'] = filename[:-4]
+    metadata['timestamp'] = time.ctime(os.path.getmtime(metadata['full_filename']))
+    with open(metadata['full_filename'], 'r+') as file:
+        metadata['tracks'] = list()
+        for line in file.readlines():
+            if line != '\n':
+                metadata['tracks'].append(db.tracks.find_one({'filename': line[:-1]})['_id'])
+    return metadata
 
 
 
