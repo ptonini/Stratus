@@ -3,19 +3,18 @@ __author__ = 'ptonini'
 import re
 import os
 import sys
-import codecs
+
 from ConfigParser import ConfigParser
 
 from gmusicapi import Musicmanager
 from pymongo import MongoClient
 from gmusicapi import Mobileclient
-from mutagen.mp3 import MP3
-from mutagen.easyid3 import EasyID3
-from mutagen import File
-import bson.binary
 
 
-def get_global_vars(filename):
+import lib.classes as classes
+
+
+def get_vars(filename):
     config = ConfigParser()
     config.read(filename)
     oauth_file = config.get('global', 'oauth_file').decode('utf-8')
@@ -63,41 +62,6 @@ def get_filelist(folder, pattern):
     return filelist
 
 
-def get_trackinfo_from(filename, path):
-    full_filename = path + filename
-    try:
-        os.path.isfile(full_filename)
-        audio = MP3(full_filename)
-        tag = EasyID3(full_filename)
-        file = File(full_filename)
-    except Exception:
-        print 'Invalid file', full_filename
-    else:
-        metadata = dict()
-        metadata['filename'] = filename
-        metadata['path'] = path
-        metadata['full_filename'] = full_filename
-        metadata['length'] = audio.info.length
-        metadata['coverart'] = bson.binary.Binary(file.tags['APIC:'].data)
-        if 'genre' in tag:
-            metadata['genre'] = tag['genre'][0]
-        if 'artist' in tag:
-            metadata['artist'] = tag['artist'][0]
-        if 'performer' in tag:
-            metadata['album_artist'] = tag['performer'][0]
-        if 'album' in tag:
-            metadata['album'] = tag['album'][0]
-        if "date" in tag:
-            metadata['year'] = tag['date'][0]
-        if 'tracknumber' in tag:
-            metadata['track_num'] = tag['tracknumber'][0]
-        if 'title' in tag:
-            metadata['title'] = tag['title'][0]
-        if 'discnumber' in tag:
-            metadata['disc_num'] = tag['discnumber'][0]
-        else:
-            metadata['disc_num'] = "1"
-        return metadata
 
 
 def get_playlists_from_folder(filename, path, db):
@@ -113,10 +77,20 @@ def get_playlists_from_folder(filename, path, db):
     return metadata
 
 
-def get_playlists_from_gmusic(db, mc):
+def get_playlists_from_gmusic(db, mc, playlists_home):
+    playlists = list()
     for playlist in mc.get_all_user_playlist_contents():
-        print playlist['name']
-        print int(int(playlist['lastModifiedTimestamp']) / 1000000)
-        print playlist['id']
+        gmusic_list = dict()
+        playlists.append(gmusic_list)
+        gmusic_list['name'] = playlist['name']
+        gmusic_list['timestamp'] = int(int(playlist['lastModifiedTimestamp']) / 1000000)
+        gmusic_list['gmusic_id'] = playlist['id']
+        gmusic_list['tracks'] = list()
+        gmusic_list['full_filename'] = playlists_home + '/' + playlist['name'] + '.m3u'
         for entry in playlist['tracks']:
-            print db.tracks.find_one({'gmusic_id': entry['trackId']})['filename']
+            gmusic_list['tracks'].append( db.tracks.find_one({'gmusic_id': entry['trackId']})['_id'])
+        playlist = classes.Playlists(gmusic_list)
+        playlist.update_db(db)
+
+
+    return playlists
