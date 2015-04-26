@@ -75,8 +75,6 @@ class Tracks:
             track_count = db.tracks.find({'filename': self.filename}).count()
             if track_count == 0:
                 db.tracks.insert(self.__dict__)
-            elif track_count == 1:
-                pass
             elif track_count > 1:
                 print 'Error: duplicate tracks on database'
 
@@ -88,8 +86,18 @@ class Tracks:
 
 
 class Playlists:
-    def __init__(self, listinfo):
-        self.__dict__.update(listinfo)
+    def __init__(self, source, db=None):
+        if isinstance(source, dict):
+            self.__dict__.update(source)
+        elif isinstance(source, list):
+            self.full_filename = os.path.join(source[0], source[1])
+            self.name = source[1][:-4]
+            self.timestamp = int(os.path.getmtime(self.full_filename))
+            with open(self.full_filename, 'r+') as file:
+                self.tracks = list()
+                for line in file.readlines():
+                    if line != '\n':
+                        self.tracks.append(db.tracks.find_one({'filename': line[:-1]})['_id'])
 
     def update_db(self, db):
         if hasattr(self, '_id'):
@@ -100,8 +108,6 @@ class Playlists:
             playlist_count = db.playlists.find({'name': self.name}).count()
             if playlist_count == 0:
                 db.playlists.insert(self.__dict__)
-            elif playlist_count == 1:
-                pass
             elif playlist_count > 1:
                 print 'Error: duplicate playlists on database'
 
@@ -111,6 +117,4 @@ class Playlists:
             track_list = list()
             for track_id in self.tracks:
                 track_list.append( db.tracks.find_one({'_id': track_id})['gmusic_id'])
-            print track_list
             mc.add_songs_to_playlist(self.gmusic_id, track_list)
-

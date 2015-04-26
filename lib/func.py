@@ -64,24 +64,12 @@ def get_filelist(folder, pattern):
 
 
 
-def get_playlists_from_folder(filename, path, db):
-    metadata = dict()
-    metadata['full_filename'] = os.path.join(path, filename)
-    metadata['name'] = filename[:-4]
-    metadata['timestamp'] = int(os.path.getmtime(metadata['full_filename']))
-    with open(metadata['full_filename'], 'r+') as file:
-        metadata['tracks'] = list()
-        for line in file.readlines():
-            if line != '\n':
-                metadata['tracks'].append(db.tracks.find_one({'filename': line[:-1]})['_id'])
-    return metadata
-
-
 def get_playlists_from_gmusic(db, mc, playlists_home):
-    playlists = list()
+
     for playlist in mc.get_all_user_playlist_contents():
+
         gmusic_list = dict()
-        playlists.append(gmusic_list)
+
         gmusic_list['name'] = playlist['name']
         gmusic_list['timestamp'] = int(int(playlist['lastModifiedTimestamp']) / 1000000)
         gmusic_list['gmusic_id'] = playlist['id']
@@ -91,6 +79,3 @@ def get_playlists_from_gmusic(db, mc, playlists_home):
             gmusic_list['tracks'].append( db.tracks.find_one({'gmusic_id': entry['trackId']})['_id'])
         playlist = classes.Playlists(gmusic_list)
         playlist.update_db(db)
-
-
-    return playlists
