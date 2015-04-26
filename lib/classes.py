@@ -1,10 +1,6 @@
 __author__ = 'ptonini'
 
-import os
 import re
-
-
-
 
 
 class Tracks:
@@ -22,7 +18,7 @@ class Tracks:
                 print 'Matched:', self.filename
             elif not r[2] == {}:
                 if 'TrackSampleResponse code 4' in r[2][self.full_filename]:
-                    self.gmusic_id = re.search("\((.*)\)", str(r[2])).group(1)
+                    self.gmusic_id = re.search("\((.*)\)", str(r[2][self.full_filename])).group(1)
                     print 'Exists:', self.filename
                 else:
                     print 'Error: could no upload or match', self.filename
@@ -38,7 +34,6 @@ class Tracks:
                 pass
             elif track_count > 1:
                 print 'Error: duplicate tracks on database'
-
 
     def delete_from_db(self, db):
         pass
@@ -56,8 +51,6 @@ class Playlists:
             dict = db.playlists.find_one({'_id': self._id})
             if dict != self.__dict__:
                 db.playlists.update({'_id': self._id}, self.__dict__)
-            else:
-                print 'no need for update'
         else:
             playlist_count = db.playlists.find({'name': self.name}).count()
             if playlist_count == 0:
@@ -66,3 +59,13 @@ class Playlists:
                 pass
             elif playlist_count > 1:
                 print 'Error: duplicate playlists on database'
+
+    def update_gmusic(self, db, mc):
+        if not hasattr(self, 'gmusic_id'):
+            self.gmusic_id = mc.create_playlist(self.name)
+            track_list = list()
+            for track_id in self.tracks:
+                track_list.append( db.tracks.find_one({'_id': track_id})['gmusic_id'])
+            print track_list
+            mc.add_songs_to_playlist(self.gmusic_id, track_list)
+
