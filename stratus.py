@@ -44,7 +44,8 @@ def main():
             playlist = classes.Playlists([folder, file], db)
             playlist.update_db(db)
 
-
+    # Sync DB playlists to gmusic
+    if False:
         for entry in db.playlists.find():
             playlist = classes.Playlists(entry)
             playlist.update_gmusic(db, mc)

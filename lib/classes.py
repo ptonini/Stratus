@@ -100,14 +100,35 @@ class Playlists:
                         self.tracks.append(db.tracks.find_one({'filename': line[:-1]})['_id'])
 
     def update_db(self, db):
-        if hasattr(self, '_id'):
-            dict = db.playlists.find_one({'_id': self._id})
-            if dict != self.__dict__:
+
+        if not hasattr(self, '_id') and not hasattr(self, 'gmusic_id'):
+
+            if db.playlists.find({'name': self.name}).count() == 0:
+                db.playlists.insert(self.__dict__)
+            elif db.playlists.find({'name': self.name}).count() == 1:
+                playlist = db.playlists.find_one({'name': self.name})
+                if playlist['tracks'] != self.tracks:
+                    db.playlists.update({'_id': self._id}, self.__dict__)
+            else:
+                print 'Error: duplicate playlists on database:', self.name
+
+        elif hasattr(self, '_id') and not hasattr(self, 'gmusic_id'):
+
+            playlist = db.playlists.find_one({'_id': self._id})
+            if playlist['tracks'] != self.tracks:
                 db.playlists.update({'_id': self._id}, self.__dict__)
-        else:
+
+        elif hasattr(self, '_id') and hasattr(self, 'gmusic_id'):
             playlist_count = db.playlists.find({'name': self.name}).count()
             if playlist_count == 0:
                 db.playlists.insert(self.__dict__)
+            elif playlist_count == 1:
+                db_playlist = db.playlists.find_one({'name': self.name})
+                if self.tracks == db_playlist['tracks']:
+                    self._id = db_playlist['_id']
+
+                else:
+                    print 'playlist is not equal'
             elif playlist_count > 1:
                 print 'Error: duplicate playlists on database'
 
