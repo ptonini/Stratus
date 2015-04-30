@@ -101,36 +101,22 @@ class Playlists:
 
     def update_db(self, db):
 
-        if not hasattr(self, '_id') and not hasattr(self, 'gmusic_id'):
-
-            if db.playlists.find({'name': self.name}).count() == 0:
+        if hasattr(self, '_id'):
+            self.__find_one_and_update_db(db, {'_id': self._id})
+        else:
+            count = db.playlists.find({'name': self.name}).count()
+            if count == 0:
                 db.playlists.insert(self.__dict__)
-            elif db.playlists.find({'name': self.name}).count() == 1:
-                playlist = db.playlists.find_one({'name': self.name})
-                if playlist['tracks'] != self.tracks:
-                    db.playlists.update({'_id': self._id}, self.__dict__)
+            elif count == 1:
+                self.__find_one_and_update_db(db, {'name': self.name})
             else:
                 print 'Error: duplicate playlists on database:', self.name
 
-        elif hasattr(self, '_id') and not hasattr(self, 'gmusic_id'):
-
-            playlist = db.playlists.find_one({'_id': self._id})
-            if playlist['tracks'] != self.tracks:
-                db.playlists.update({'_id': self._id}, self.__dict__)
-
-        elif hasattr(self, '_id') and hasattr(self, 'gmusic_id'):
-            playlist_count = db.playlists.find({'name': self.name}).count()
-            if playlist_count == 0:
-                db.playlists.insert(self.__dict__)
-            elif playlist_count == 1:
-                db_playlist = db.playlists.find_one({'name': self.name})
-                if self.tracks == db_playlist['tracks']:
-                    self._id = db_playlist['_id']
-
-                else:
-                    print 'playlist is not equal'
-            elif playlist_count > 1:
-                print 'Error: duplicate playlists on database'
+    def __find_one_and_update_db(self, db, criteria):
+        playlist = db.playlists.find_one(criteria)
+        if self.timestamp < playlist['timestamp']:
+            self.tracks = playlist['tracks']
+        db.playlists.update(criteria, self.__dict__)
 
     def update_gmusic(self, db, mc):
         if not hasattr(self, 'gmusic_id'):
@@ -139,3 +125,5 @@ class Playlists:
             for track_id in self.tracks:
                 track_list.append( db.tracks.find_one({'_id': track_id})['gmusic_id'])
             mc.add_songs_to_playlist(self.gmusic_id, track_list)
+
+
