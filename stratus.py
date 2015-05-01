@@ -50,7 +50,7 @@ def main():
             playlist.update_db(db)
 
     # Sync gmusic playlists to DB
-    if False:
+    if True:
         for songlist in gm_playlists:
             playlist = classes.Playlists(songlist, playlists_home=playlists_home)
             playlist.update_db(db)
