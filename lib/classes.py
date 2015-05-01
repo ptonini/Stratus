@@ -57,14 +57,11 @@ class Tracks:
             r = mm.upload(self.full_filename, enable_matching=True)
             if not r[0] == {}:
                 self.gmusic_id = r[0][self.full_filename]
-                print 'Uploaded:', self.filename
             elif not r[1] == {}:
                 self.gmusic_id = r[1][self.full_filename]
-                print 'Matched:', self.filename
             elif not r[2] == {}:
                 if 'TrackSampleResponse code 4' in r[2][self.full_filename]:
                     self.gmusic_id = re.search("\((.*)\)", str(r[2][self.full_filename])).group(1)
-                    print 'Exists:', self.filename
                 else:
                     print 'Error: could no upload or match', self.filename
 
@@ -86,9 +83,19 @@ class Tracks:
 
 
 class Playlists:
-    def __init__(self, source, db=None):
+    def __init__(self, source, db=None, playlists_home=None):
         if isinstance(source, dict):
-            self.__dict__.update(source)
+            if '_id' in source:
+                self.__dict__.update(source)
+            elif 'id' in source:
+                self.full_filename = playlists_home + '/' + source['name'] + '.m3u'
+                self.name = source['name']
+                self.timestamp = int(int(source['lastModifiedTimestamp'])/1000000)
+                self.tracks = list()
+                for track in source['tracks']:
+                    self.tracks.append(db.tracks.find_one({'gmusic_id': track['trackId']})['_id'])
+                self.gmusic_id = source['id']
+
         elif isinstance(source, list):
             self.full_filename = os.path.join(source[0], source[1])
             self.name = source[1][:-4]
@@ -98,9 +105,7 @@ class Playlists:
                 for line in file.readlines():
                     if line != '\n':
                         self.tracks.append(db.tracks.find_one({'filename': line[:-1]})['_id'])
-
     def update_db(self, db):
-
         if hasattr(self, '_id'):
             self.__find_one_and_update_db(db, {'_id': self._id})
         else:
@@ -112,18 +117,55 @@ class Playlists:
             else:
                 print 'Error: duplicate playlists on database:', self.name
 
-    def __find_one_and_update_db(self, db, criteria):
-        playlist = db.playlists.find_one(criteria)
-        if self.timestamp < playlist['timestamp']:
-            self.tracks = playlist['tracks']
-        db.playlists.update(criteria, self.__dict__)
 
-    def update_gmusic(self, db, mc):
-        if not hasattr(self, 'gmusic_id'):
-            self.gmusic_id = mc.create_playlist(self.name)
+    def update_gmusic(self, db, mc, gm_playlists):
+
+        if  hasattr(self, 'gmusic_id'):
+            for gm_playlist in gm_playlists:
+                if self.gmusic_id == gm_playlist['id']:
+                    self.__find_most_recent_and_update(db, mc, gm_playlist)
+                    break
+                else:
+                    print 'Error - could not match gmusic_id:', self.name
+
+        else:
+
+            matched_lists = list()
+            for gm_playlist in gm_playlists:
+                if self.name == gm_playlist['name']:
+                    matched_lists.append(gm_playlist)
+
+            if len(matched_lists) == 0:
+                self.gmusic_id = mc.create_playlist(self.name)
+                self.__build_list_and_update_gmusic(db, mc)
+            elif len(matched_lists) == 1:
+                self.gmusic_id = matched_lists[0]['id']
+                self.__find_most_recent_and_update(db, mc, matched_lists[0])
+            else:
+                 print 'Error - duplicate playlists on gmusic:', matched_lists[0]['name']
+
+
+    def __find_one_and_update_db(self, db, criteria):
+            playlist = db.playlists.find_one(criteria)
+            if self.timestamp < playlist['timestamp']:
+                self.tracks = playlist['tracks']
+            db.playlists.update(criteria, self.__dict__)
+
+    def __build_list_and_update_gmusic(self, db, mc):
+        track_list = list()
+        for track_id in self.tracks:
+            track_list.append(db.tracks.find_one({'_id': track_id})['gmusic_id'])
+        mc.add_songs_to_playlist(self.gmusic_id, track_list)
+
+    def __find_most_recent_and_update(self, db, mc, gm_playlist):
+        gm_timestamp = int(int(gm_playlist['lastModifiedTimestamp'])/1000000)
+        if self.timestamp > gm_timestamp:
+            self.__build_list_and_update_gmusic(db, mc)
+        else:
+            self.timestamp = gm_timestamp
             track_list = list()
-            for track_id in self.tracks:
-                track_list.append( db.tracks.find_one({'_id': track_id})['gmusic_id'])
-            mc.add_songs_to_playlist(self.gmusic_id, track_list)
+            for track in gm_playlist['tracks']:
+                track_list.append(db.tracks.find_one({'gmusic_id': track['trackId']})['_id'])
+            self.tracks = track_list
 
 

@@ -5,6 +5,7 @@
 import warnings
 import sys
 
+
 import lib.classes as classes
 import lib.func as func
 
@@ -16,10 +17,7 @@ def main():
     mm = func.open_musicmanager(oauth_file)
     mc = func.open_mobileclient(gm_user, gm_pass)
     db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
-
-    tracklist = func.get_filelist(library_home, '.*.mp3$')
-    playlists = func.get_filelist(playlists_home, '.*.m3u$')
-
+    gm_playlists = mc.get_all_user_playlist_contents()
 
     #db.tracks.drop()
     #db.playlists.drop()
@@ -27,7 +25,7 @@ def main():
 
     # Build track collection from mp3 files
     if False:
-        for folder, root, file in tracklist:
+        for folder, root, file in func.get_filelist(library_home, '.*.mp3$'):
             track = classes.Tracks([folder, file])
             track.update_db(db)
 
@@ -39,29 +37,22 @@ def main():
             track.update_db(db)
 
     # Build playlist collection from m3u files
-    if False:
-        for folder, root, file in playlists:
+    if True:
+        for folder, root, file in func.get_filelist(playlists_home, '.*.m3u$'):
             playlist = classes.Playlists([folder, file], db)
             playlist.update_db(db)
 
     # Sync DB playlists to gmusic
-    if False:
+    if True:
         for entry in db.playlists.find():
             playlist = classes.Playlists(entry)
-            playlist.update_gmusic(db, mc)
+            playlist.update_gmusic(db, mc, gm_playlists)
             playlist.update_db(db)
 
-    if True:
-        for songlist in mc.get_all_user_playlist_contents():
-            gmusic_list = dict()
-            gmusic_list['name'] = songlist['name']
-            gmusic_list['timestamp'] = int(int(songlist['lastModifiedTimestamp']) / 1000000)
-            gmusic_list['gmusic_id'] = songlist['id']
-            gmusic_list['full_filename'] = playlists_home + '/' + songlist['name'] + '.m3u'
-            gmusic_list['tracks'] = list()
-            for track in songlist['tracks']:
-                gmusic_list['tracks'].append(db.tracks.find_one({'gmusic_id': track['trackId']})['_id'])
-            playlist = classes.Playlists(gmusic_list)
+    # Sync gmusic playlists to DB
+    if False:
+        for songlist in gm_playlists:
+            playlist = classes.Playlists(songlist, playlists_home=playlists_home)
             playlist.update_db(db)
 
 
