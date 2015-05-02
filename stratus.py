@@ -17,18 +17,18 @@ def main():
     db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
     gm_playlists = mc.get_all_user_playlist_contents()
 
-    # db.tracks.drop()
+    #db.tracks.drop()
     #db.playlists.drop()
 
 
     # Build track collection from mp3 files
-    if False:
+    if True:
         for folder, root, file in func.get_filelist(library_home, '.*.mp3$'):
             track = classes.Tracks([folder, file])
             track.update_db(db)
 
     # Upload/match database to gmusic
-    if False:
+    if True:
         for entry in db.tracks.find():
             track = classes.Tracks(entry)
             track.update_gmusic(mm)

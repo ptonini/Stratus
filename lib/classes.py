@@ -27,6 +27,7 @@ class Tracks:
                 self.path = source[0]
                 self.filename = source[1]
                 self.full_filename = full_filename
+                self.timestamp = int(os.path.getmtime(self.full_filename))
                 self.length = audio.info.length
                 self.coverart = bson.binary.Binary(file.tags['APIC:'].data)
                 if 'genre' in tag:
@@ -48,19 +49,6 @@ class Tracks:
                 else:
                     self.disc_num = "1"
 
-    def update_gmusic(self, mm):
-        if not hasattr(self, 'gmusic_id'):
-            r = mm.upload(self.full_filename, enable_matching=True)
-            if not r[0] == {}:
-                self.gmusic_id = r[0][self.full_filename]
-            elif not r[1] == {}:
-                self.gmusic_id = r[1][self.full_filename]
-            elif not r[2] == {}:
-                if 'TrackSampleResponse code 4' in r[2][self.full_filename]:
-                    self.gmusic_id = re.search("\((.*)\)", str(r[2][self.full_filename])).group(1)
-                else:
-                    print 'Error: could no upload or match', self.filename
-
     def update_db(self, db):
         if hasattr(self, '_id'):
             db.tracks.update({'_id': self._id}, self.__dict__)
@@ -71,7 +59,25 @@ class Tracks:
             elif track_count > 1:
                 print 'Error: duplicate tracks on database'
 
+    def update_gmusic(self, mm):
+        if not hasattr(self, 'gmusic_id'):
+            r = mm.upload(self.full_filename, enable_matching=True)
+            if not r[0] == {}:
+                self.gmusic_id = r[0][self.full_filename]
+                print 'Uploaded:', self.filename
+            elif not r[1] == {}:
+                self.gmusic_id = r[1][self.full_filename]
+                print 'Matched: ', self.filename
+            elif not r[2] == {}:
+                if 'TrackSampleResponse code 4' in r[2][self.full_filename]:
+                    self.gmusic_id = re.search("\((.*)\)", str(r[2][self.full_filename])).group(1)
+                    print 'Exists:  ', self.filename
+                else:
+                    print 'Error: could no upload or match', self.filename
+
+
 class Playlists:
+
     def __init__(self, source, db=None, playlists_home=None):
         if isinstance(source, dict):
             if '_id' in source:
@@ -84,7 +90,6 @@ class Playlists:
                 for track in source['tracks']:
                     self.tracks.append(db.tracks.find_one({'gmusic_id': track['trackId']})['_id'])
                 self.gmusic_id = source['id']
-
         elif isinstance(source, list):
             self.full_filename = os.path.join(source[0], source[1])
             self.name = source[1][:-4]
@@ -105,7 +110,6 @@ class Playlists:
                 self.__find_one_and_update_db(db, {'name': self.name})
             else:
                 print 'Error: duplicate playlists on database:', self.name
-
 
     def update_gmusic(self, db, mc, gm_playlists):
         if  hasattr(self, 'gmusic_id'):
@@ -128,7 +132,6 @@ class Playlists:
                 self.__find_most_recent_and_update(db, mc, matched_lists[0])
             else:
                  print 'Error - duplicate playlists on gmusic:', matched_lists[0]['name']
-
 
     def __find_one_and_update_db(self, db, criteria):
         playlist = db.playlists.find_one(criteria)
