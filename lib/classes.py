@@ -3,13 +3,10 @@ __author__ = 'ptonini'
 import re
 import os
 
-
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
 from mutagen import File
 import bson.binary
-
-
 
 
 class Tracks:
@@ -51,7 +48,6 @@ class Tracks:
                 else:
                     self.disc_num = "1"
 
-
     def update_gmusic(self, mm):
         if not hasattr(self, 'gmusic_id'):
             r = mm.upload(self.full_filename, enable_matching=True)
@@ -74,13 +70,6 @@ class Tracks:
                 db.tracks.insert(self.__dict__)
             elif track_count > 1:
                 print 'Error: duplicate tracks on database'
-
-    def delete_from_db(self, db):
-        pass
-
-    def delete_from_gmusic(self, mm):
-        pass
-
 
 class Playlists:
     def __init__(self, source, db=None, playlists_home=None):
@@ -119,7 +108,6 @@ class Playlists:
 
 
     def update_gmusic(self, db, mc, gm_playlists):
-
         if  hasattr(self, 'gmusic_id'):
             for gm_playlist in gm_playlists:
                 if self.gmusic_id == gm_playlist['id']:
@@ -127,14 +115,11 @@ class Playlists:
                     break
                 else:
                     print 'Error - could not match gmusic_id:', self.name
-
         else:
-
             matched_lists = list()
             for gm_playlist in gm_playlists:
                 if self.name == gm_playlist['name']:
                     matched_lists.append(gm_playlist)
-
             if len(matched_lists) == 0:
                 self.gmusic_id = mc.create_playlist(self.name)
                 self.__build_list_and_update_gmusic(db, mc)
@@ -146,20 +131,24 @@ class Playlists:
 
 
     def __find_one_and_update_db(self, db, criteria):
-            playlist = db.playlists.find_one(criteria)
-            if self.timestamp < playlist['timestamp']:
-                self.tracks = playlist['tracks']
-            db.playlists.update(criteria, self.__dict__)
+        playlist = db.playlists.find_one(criteria)
+        if self.timestamp < playlist['timestamp']:
+            self.tracks = playlist['tracks']
+        db.playlists.update(criteria, self.__dict__)
 
     def __build_list_and_update_gmusic(self, db, mc):
-        track_list = list()
+        new_list = list()
         for track_id in self.tracks:
-            track_list.append(db.tracks.find_one({'_id': track_id})['gmusic_id'])
-        mc.add_songs_to_playlist(self.gmusic_id, track_list)
+            new_list.append(db.tracks.find_one({'_id': track_id})['gmusic_id'])
+        mc.add_songs_to_playlist(self.gmusic_id, new_list)
 
     def __find_most_recent_and_update(self, db, mc, gm_playlist):
         gm_timestamp = int(int(gm_playlist['lastModifiedTimestamp'])/1000000)
         if self.timestamp > gm_timestamp:
+            old_list = list()
+            for entry in gm_playlist['tracks']:
+                old_list.append(entry['id'])
+            mc.remove_entries_from_playlist(old_list)
             self.__build_list_and_update_gmusic(db, mc)
         else:
             self.timestamp = gm_timestamp

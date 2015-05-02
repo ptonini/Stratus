@@ -5,13 +5,11 @@
 import warnings
 import sys
 
-
 import lib.classes as classes
 import lib.func as func
 
 
 def main():
-
     oauth_file, gm_user, gm_pass, mongo_address, mongo_port, library_home, playlists_home = func.get_vars(sys.argv[1])
 
     mm = func.open_musicmanager(oauth_file)
@@ -19,7 +17,7 @@ def main():
     db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
     gm_playlists = mc.get_all_user_playlist_contents()
 
-    #db.tracks.drop()
+    # db.tracks.drop()
     #db.playlists.drop()
 
 
@@ -51,8 +49,8 @@ def main():
 
     # Sync gmusic playlists to DB
     if True:
-        for songlist in gm_playlists:
-            playlist = classes.Playlists(songlist, playlists_home=playlists_home)
+        for gm_playlist in gm_playlists:
+            playlist = classes.Playlists(gm_playlist, db, playlists_home)
             playlist.update_db(db)
 
 
