@@ -23,12 +23,14 @@ def main():
 
     # Build track collection from mp3 files
     if True:
+    #if False:
         for folder, root, file in func.get_filelist(library_home, '.*.mp3$'):
             track = classes.Tracks([folder, file])
             track.update_db(db)
 
     # Upload/match database to gmusic
     if True:
+    #if False:
         for entry in db.tracks.find():
             track = classes.Tracks(entry)
             track.update_gmusic(mm)
@@ -36,12 +38,14 @@ def main():
 
     # Build playlist collection from m3u files
     if True:
+    #if False:
         for folder, root, file in func.get_filelist(playlists_home, '.*.m3u$'):
             playlist = classes.Playlists([folder, file], db)
             playlist.update_db(db)
 
     # Sync DB playlists to gmusic
     if True:
+    #if False:
         for entry in db.playlists.find():
             playlist = classes.Playlists(entry)
             playlist.update_gmusic(db, mc, gm_playlists)
@@ -49,6 +53,7 @@ def main():
 
     # Sync gmusic playlists to DB
     if True:
+    #if False:
         for gm_playlist in gm_playlists:
             playlist = classes.Playlists(gm_playlist, db, playlists_home)
             playlist.update_db(db)

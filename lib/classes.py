@@ -99,6 +99,7 @@ class Playlists:
                 for line in file.readlines():
                     if line != '\n':
                         self.tracks.append(db.tracks.find_one({'filename': line[:-1]})['_id'])
+
     def update_db(self, db):
         if hasattr(self, '_id'):
             self.__find_one_and_update_db(db, {'_id': self._id})
@@ -115,7 +116,7 @@ class Playlists:
         if  hasattr(self, 'gmusic_id'):
             for gm_playlist in gm_playlists:
                 if self.gmusic_id == gm_playlist['id']:
-                    self.__find_most_recent_and_update(db, mc, gm_playlist)
+                    self.__find_most_recent_and_update_gmusic(db, mc, gm_playlist)
                     break
                 else:
                     print 'Error - could not match gmusic_id:', self.name
@@ -129,7 +130,7 @@ class Playlists:
                 self.__build_list_and_update_gmusic(db, mc)
             elif len(matched_lists) == 1:
                 self.gmusic_id = matched_lists[0]['id']
-                self.__find_most_recent_and_update(db, mc, matched_lists[0])
+                self.__find_most_recent_and_update_gmusic(db, mc, matched_lists[0])
             else:
                  print 'Error - duplicate playlists on gmusic:', matched_lists[0]['name']
 
@@ -145,7 +146,7 @@ class Playlists:
             new_list.append(db.tracks.find_one({'_id': track_id})['gmusic_id'])
         mc.add_songs_to_playlist(self.gmusic_id, new_list)
 
-    def __find_most_recent_and_update(self, db, mc, gm_playlist):
+    def __find_most_recent_and_update_gmusic(self, db, mc, gm_playlist):
         gm_timestamp = int(int(gm_playlist['lastModifiedTimestamp'])/1000000)
         if self.timestamp > gm_timestamp:
             old_list = list()

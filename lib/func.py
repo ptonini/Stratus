@@ -3,15 +3,11 @@ __author__ = 'ptonini'
 import re
 import os
 import sys
-
 from ConfigParser import ConfigParser
 
 from gmusicapi import Musicmanager
 from pymongo import MongoClient
 from gmusicapi import Mobileclient
-
-
-import lib.classes as classes
 
 
 def get_vars(filename):
@@ -24,13 +20,12 @@ def get_vars(filename):
     mongo_port = config.get('global', 'mongo_port')
     library_home = config.get('global', 'library_home').decode('utf-8')
     playlists_home = config.get('global', 'playlists_home').decode('utf-8')
-    return  oauth_file, gmusic_user, gmusic_pass, mongo_address, mongo_port, library_home, playlists_home
+    return oauth_file, gmusic_user, gmusic_pass, mongo_address, mongo_port, library_home, playlists_home
 
 
 def open_db(database):
     client = MongoClient(database)
-    db = client.stratus
-    return db
+    return client.stratus
 
 
 def open_musicmanager(cred):
@@ -62,20 +57,3 @@ def get_filelist(folder, pattern):
     return filelist
 
 
-
-
-def get_playlists_from_gmusic(db, mc, playlists_home):
-
-    for playlist in mc.get_all_user_playlist_contents():
-
-        gmusic_list = dict()
-
-        gmusic_list['name'] = playlist['name']
-        gmusic_list['timestamp'] = int(int(playlist['lastModifiedTimestamp']) / 1000000)
-        gmusic_list['gmusic_id'] = playlist['id']
-        gmusic_list['tracks'] = list()
-        gmusic_list['full_filename'] = playlists_home + '/' + playlist['name'] + '.m3u'
-        for entry in playlist['tracks']:
-            gmusic_list['tracks'].append( db.tracks.find_one({'gmusic_id': entry['trackId']})['_id'])
-        playlist = classes.Playlists(gmusic_list)
-        playlist.update_db(db)
