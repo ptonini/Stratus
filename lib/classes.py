@@ -5,8 +5,6 @@ import os
 
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
-from mutagen import File
-import bson.binary
 
 
 class Tracks:
@@ -20,7 +18,6 @@ class Tracks:
                 os.path.isfile(full_filename)
                 audio = MP3(full_filename)
                 tag = EasyID3(full_filename)
-                file = File(full_filename)
             except Exception:
                 print 'Invalid file', full_filename
             else:
@@ -29,7 +26,6 @@ class Tracks:
                 self.full_filename = full_filename
                 self.timestamp = int(os.path.getmtime(self.full_filename))
                 self.length = audio.info.length
-                self.coverart = bson.binary.Binary(file.tags['APIC:'].data)
                 if 'genre' in tag:
                     self.genre = tag['genre'][0]
                 if 'artist' in tag:
@@ -52,10 +48,12 @@ class Tracks:
     def update_db(self, db):
         if hasattr(self, '_id'):
             db.tracks.update({'_id': self._id}, self.__dict__)
+            print 'Updated to DB:', self.filename
         else:
             track_count = db.tracks.find({'filename': self.filename}).count()
             if track_count == 0:
                 db.tracks.insert(self.__dict__)
+                print 'Added to DB:', self.filename
             elif track_count > 1:
                 print 'Error: duplicate tracks on database'
 

@@ -13,13 +13,13 @@ from gmusicapi import Mobileclient
 def get_vars(filename):
     config = ConfigParser()
     config.read(filename)
-    oauth_file = config.get('global', 'oauth_file').decode('utf-8')
+    oauth_file = config.get('global', 'oauth_file')
     gmusic_user = config.get('global', 'gmusic_user')
     gmusic_pass = config.get('global', 'gmusic_pass')
     mongo_address = config.get('global', 'mongo_address')
     mongo_port = config.get('global', 'mongo_port')
-    library_home = config.get('global', 'library_home').decode('utf-8')
-    playlists_home = config.get('global', 'playlists_home').decode('utf-8')
+    library_home = config.get('global', 'library_home')
+    playlists_home = config.get('global', 'playlists_home')
     return oauth_file, gmusic_user, gmusic_pass, mongo_address, mongo_port, library_home, playlists_home
 
 
