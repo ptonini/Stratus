@@ -24,26 +24,53 @@ def get_vars(filename):
 
 
 def open_db(database):
-    client = MongoClient(database)
-    return client.stratus
+    try:
+        print 'Connecting to DB',
+        client = MongoClient(database)
+    except Exception:
+        print '    error'
+        sys.exit(1)
+    else:
+        print '    ok'
+        return client.stratus
 
 
 def open_musicmanager(cred):
     mm = Musicmanager()
-    if mm.login(oauth_credentials=cred):
-        return mm
-    else:
-        print 'Error conecting to Google Music (MM)'
+    try:
+        print 'Connecting to Google Music (MM)',
+        mm.login(oauth_credentials=cred)
+    except Exception:
+        print '    error'
         sys.exit(1)
+    else:
+        print '    ok'
+        return mm
 
 
 def open_mobileclient(user, paswd):
     mc = Mobileclient()
-    if mc.login(user, paswd):
-        return mc
-    else:
-        print 'Error conecting to Google Music (MC)'
+    try:
+        print 'Connecting to Google Music (MC)',
+        mc.login(user, paswd)
+    except Exception:
+        print '    error'
         sys.exit(1)
+    else:
+        print '    ok'
+        return mc
+
+
+def get_gm_playlists(mc):
+    try:
+        print 'Retrieving Google Music playlists',
+        gm_playlists = mc.get_all_user_playlist_contents()
+    except Exception:
+        print '    error'
+        sys.exit(1)
+    else:
+        print '    ok'
+        return gm_playlists
 
 
 def get_filelist(folder, pattern):

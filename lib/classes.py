@@ -2,6 +2,8 @@ __author__ = 'ptonini'
 
 import re
 import os
+import sys
+
 
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
@@ -55,9 +57,9 @@ class Tracks:
                 db.tracks.insert(self.__dict__)
                 print 'Added to DB:', self.filename
             elif track_count > 1:
-                print 'Error: duplicate tracks on database'
+                print 'Error: duplicate tracks on database:', self.filename
 
-    def update_gmusic(self, mm):
+    def upload_to_gmusic(self, mm):
         if not hasattr(self, 'gmusic_id'):
             r = mm.upload(self.full_filename, enable_matching=True)
             if not r[0] == {}:
@@ -78,16 +80,17 @@ class Playlists:
 
     def __init__(self, source, db=None, playlists_home=None):
         if isinstance(source, dict):
-            if '_id' in source:
-                self.__dict__.update(source)
-            elif 'id' in source:
-                self.full_filename = playlists_home + '/' + source['name'] + '.m3u'
+            if 'id' in source:
+                self.full_filename = playlists_home + '/' + source['name'].encode('utf-8') + '.m3u'
                 self.name = source['name']
                 self.timestamp = int(int(source['lastModifiedTimestamp'])/1000000)
                 self.tracks = list()
+                print self.name
                 for track in source['tracks']:
                     self.tracks.append(db.tracks.find_one({'gmusic_id': track['trackId']})['_id'])
                 self.gmusic_id = source['id']
+            else:
+                self.__dict__.update(source)
         elif isinstance(source, list):
             self.full_filename = os.path.join(source[0], source[1])
             self.name = source[1][:-4]
@@ -100,24 +103,28 @@ class Playlists:
 
     def update_db(self, db):
         if hasattr(self, '_id'):
+            print 'Updating playlist "' + self.name + '" on database'
             self.__find_one_and_update_db(db, {'_id': self._id})
         else:
             count = db.playlists.find({'name': self.name}).count()
             if count == 0:
+                print 'Adding playlist "' + self.name + '" to database.'
                 db.playlists.insert(self.__dict__)
             elif count == 1:
+                print 'Updating playlist "' + self.name + '" on database'
                 self.__find_one_and_update_db(db, {'name': self.name})
             else:
                 print 'Error: duplicate playlists on database:', self.name
 
     def update_gmusic(self, db, mc, gm_playlists):
-        if  hasattr(self, 'gmusic_id'):
+        if hasattr(self, 'gmusic_id'):
             for gm_playlist in gm_playlists:
                 if self.gmusic_id == gm_playlist['id']:
                     self.__find_most_recent_and_update_gmusic(db, mc, gm_playlist)
+                    matched_gmusic_id = True
                     break
-                else:
-                    print 'Error - could not match gmusic_id:', self.name
+            if not matched_gmusic_id:
+                print 'Error - could not match gmusic_id:', self.name
         else:
             matched_lists = list()
             for gm_playlist in gm_playlists:
@@ -142,14 +149,20 @@ class Playlists:
         new_list = list()
         for track_id in self.tracks:
             new_list.append(db.tracks.find_one({'_id': track_id})['gmusic_id'])
-        mc.add_songs_to_playlist(self.gmusic_id, new_list)
+        try:
+            mc.add_songs_to_playlist(self.gmusic_id, new_list)
+        except:
+            print 'Error'
+            sys.exit(1)
 
     def __find_most_recent_and_update_gmusic(self, db, mc, gm_playlist):
         gm_timestamp = int(int(gm_playlist['lastModifiedTimestamp'])/1000000)
         if self.timestamp > gm_timestamp:
             old_list = list()
+            print len(gm_playlist['tracks']), self.name, gm_playlist['name']
             for entry in gm_playlist['tracks']:
                 old_list.append(entry['id'])
+            print len(old_list)
             mc.remove_entries_from_playlist(old_list)
             self.__build_list_and_update_gmusic(db, mc)
         else:
