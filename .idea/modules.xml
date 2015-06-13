@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../MongoDB-M101P/.idea/MongoDB-M101P.iml" filepath="$PROJECT_DIR$/../MongoDB-M101P/.idea/MongoDB-M101P.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../MongoTools/.idea/MongoTools.iml" filepath="$PROJECT_DIR$/../MongoTools/.idea/MongoTools.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/Stratus.iml" filepath="$PROJECT_DIR$/.idea/Stratus.iml" />
       <module fileurl="file://$PROJECT_DIR$/../m2m-nagios-plugins/.idea/m2m-nagios-plugins.iml" filepath="$PROJECT_DIR$/../m2m-nagios-plugins/.idea/m2m-nagios-plugins.iml" />
       <module fileurl="file://$PROJECT_DIR$/../m2m-watchdog/.idea/m2m-watchdog.iml" filepath="$PROJECT_DIR$/../m2m-watchdog/.idea/m2m-watchdog.iml" />

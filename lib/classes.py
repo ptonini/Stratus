@@ -1,8 +1,11 @@
+from time import sleep
+
 __author__ = 'ptonini'
 
 import re
 import os
 import sys
+import time
 
 
 from mutagen.mp3 import MP3
@@ -156,15 +159,18 @@ class Playlists:
             sys.exit(1)
 
     def __find_most_recent_and_update_gmusic(self, db, mc, gm_playlist):
-        gm_timestamp = int(int(gm_playlist['lastModifiedTimestamp'])/1000000)
+        gm_timestamp = int(gm_playlist['lastModifiedTimestamp'])/1000000
         if self.timestamp > gm_timestamp:
+            print self.timestamp - gm_timestamp
             old_list = list()
-            print len(gm_playlist['tracks']), self.name, gm_playlist['name']
+
             for entry in gm_playlist['tracks']:
                 old_list.append(entry['id'])
-            print len(old_list)
+            print 'Updating playlist "' + self.name + '"',
             mc.remove_entries_from_playlist(old_list)
+            time.sleep(len(old_list)/100)
             self.__build_list_and_update_gmusic(db, mc)
+            print '    finished'
         else:
             self.timestamp = gm_timestamp
             track_list = list()

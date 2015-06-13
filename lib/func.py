@@ -27,11 +27,11 @@ def open_db(database):
     try:
         print 'Connecting to DB',
         client = MongoClient(database)
-    except Exception:
-        print '    error'
+    except Exception as e:
+        print '                         error:', type(e), e
         sys.exit(1)
     else:
-        print '    ok'
+        print '                         ok'
         return client.stratus
 
 
@@ -40,11 +40,11 @@ def open_musicmanager(cred):
     try:
         print 'Connecting to Google Music (MM)',
         mm.login(oauth_credentials=cred)
-    except Exception:
-        print '    error'
+    except Exception as e:
+        print '          error:', type(e), e
         sys.exit(1)
     else:
-        print '    ok'
+        print '          ok'
         return mm
 
 
@@ -53,11 +53,11 @@ def open_mobileclient(user, paswd):
     try:
         print 'Connecting to Google Music (MC)',
         mc.login(user, paswd)
-    except Exception:
-        print '    error'
+    except Exception as e:
+        print '          error:', type(e), e
         sys.exit(1)
     else:
-        print '    ok'
+        print '          ok'
         return mc
 
 
@@ -65,11 +65,11 @@ def get_gm_playlists(mc):
     try:
         print 'Retrieving Google Music playlists',
         gm_playlists = mc.get_all_user_playlist_contents()
-    except Exception:
-        print '    error'
+    except Exception as e:
+        print '        error:', type(e), e
         sys.exit(1)
     else:
-        print '    ok'
+        print '        ok'
         return gm_playlists
 
 

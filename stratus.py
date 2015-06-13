@@ -18,7 +18,8 @@ def main():
     mm = func.open_musicmanager(oauth_file)
     mc = func.open_mobileclient(gm_user, gm_pass)
     db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
-    gm_playlists = func.get_gm_playlists(mc)
+    gm_playlists = mc.get_all_user_playlist_contents()
+    #gm_playlists = func.get_gm_playlists(mc)
 
 
 
@@ -59,8 +60,8 @@ def main():
             playlist.update_db(db)
 
     # Build Master playlists
-    #if True:
-    if False:
+    if True:
+    #if False:
         print 'Building Master playlists:',
         all_tracks_list = list()
         partial_track_lists = list()
@@ -85,11 +86,12 @@ def main():
             master_playlist['tracks'] = track_list
             playlist = classes.Playlists(master_playlist)
             playlist.update_db(db)
-
+            playlist.update_gmusic(db, mc, gm_playlists)
+            playlist.update_db(db)
 
     # Sync DB playlists to gmusic
-    if True:
-    #if False:
+    # if True:
+    if False:
         for entry in db.playlists.find():
             playlist = classes.Playlists(entry)
             playlist.update_gmusic(db, mc, gm_playlists)

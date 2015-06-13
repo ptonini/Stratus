@@ -6,5 +6,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="m2m-watchdog" />
     <orderEntry type="module" module-name="m2m-nagios-plugins" />
+    <orderEntry type="module" module-name="MongoDB-M101P" />
+    <orderEntry type="module" module-name="MongoTools" />
   </component>
 </module>
