@@ -4,6 +4,8 @@
 
 import warnings
 import sys
+import re
+import os
 
 import lib.classes as classes
 import lib.func as func
@@ -13,17 +15,22 @@ import lib.func as func
 def main():
 
     oauth_file, gm_user, gm_pass, mongo_address, mongo_port, library_home, playlists_home = func.get_vars(sys.argv[1])
-    mm = func.open_musicmanager(oauth_file)
+    #mm = func.open_musicmanager(oauth_file)
     mc = func.open_mobileclient(gm_user, gm_pass)
-    db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
-    gm_playlists = func.get_gm_playlists(mc)
+    #wc = func.open_webclient(gm_user, gm_pass)
+    #db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
+    #gm_playlists = func.get_gm_playlists(mc)
 
 
     #func.build_track_collection_from_mp3(db, library_home)
-    func.match_database_to_gmusic(db, mm)
+    #func.match_database_to_gmusic(db, mm)
 
-
-
+    #Upload coverart
+    if True:
+        for track in db.tracks.find({'album': 'As Mil E Uma Aldeias'}):
+            song = mc.get_track_info(track['gmusic_id'])
+            song['albumArtist'] = track['album_artist']
+            mc.change_song_metadata(song)
 
     # Build playlist collection from m3u files
     #if True:
@@ -52,9 +59,11 @@ def main():
 
 
 
+try:
+    if __name__ == '__main__':
+        warnings.filterwarnings('ignore')
+        main()
+except Exception as e:
+    print '          error:', type(e), e
+    sys.exit(1)
 
-
-if __name__ == '__main__':
-    warnings.filterwarnings('ignore')
-
-    main()

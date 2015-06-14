@@ -8,9 +8,10 @@ import time
 
 from ConfigParser import ConfigParser
 
-from gmusicapi import Musicmanager
 from pymongo import MongoClient
+from gmusicapi import Musicmanager
 from gmusicapi import Mobileclient
+from gmusicapi import Webclient
 import lib.classes as classes
 
 def get_vars(filename):
@@ -53,16 +54,22 @@ def open_musicmanager(cred):
 
 def open_mobileclient(user, paswd):
     mc = Mobileclient()
+    print 'Connecting to Google Music (MC)',
+    mc.login(user, paswd)
+    return mc
+
+
+def open_webclient(user, paswd):
+    wc = Webclient()
     try:
-        print 'Connecting to Google Music (MC)',
-        mc.login(user, paswd)
+        print 'Connecting to Google Music (WC)',
+        wc.login(user, paswd)
     except Exception as e:
         print '          error:', type(e), e
         sys.exit(1)
     else:
         print '          ok'
-        return mc
-
+        return wc
 
 def get_gm_playlists(mc):
     try:
