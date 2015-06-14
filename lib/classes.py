@@ -161,14 +161,12 @@ class Playlists:
     def __find_most_recent_and_update_gmusic(self, db, mc, gm_playlist):
         gm_timestamp = int(gm_playlist['lastModifiedTimestamp'])/1000000
         if self.timestamp > gm_timestamp:
-            print self.timestamp - gm_timestamp
             old_list = list()
-
             for entry in gm_playlist['tracks']:
                 old_list.append(entry['id'])
             print 'Updating playlist "' + self.name + '"',
             mc.remove_entries_from_playlist(old_list)
-            time.sleep(len(old_list)/100)
+            time.sleep(len(old_list)/90 )
             self.__build_list_and_update_gmusic(db, mc)
             print '    finished'
         else:
