@@ -18,19 +18,18 @@ def main():
     #mm = func.open_musicmanager(oauth_file)
     mc = func.open_mobileclient(gm_user, gm_pass)
     #wc = func.open_webclient(gm_user, gm_pass)
-    #db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
-    #gm_playlists = func.get_gm_playlists(mc)
+    db = func.open_db('mongodb://' + mongo_address + ':' + mongo_port)
+    gm_playlists = func.get_gm_playlists(mc)
 
+    #print 'getting songlist from gmusic',
+    #all_songs = mc.get_all_songs(incremental=False, include_deleted=False)
+    #print '... done'
+    #print len(all_songs)
 
     #func.build_track_collection_from_mp3(db, library_home)
     #func.match_database_to_gmusic(db, mm)
 
-    #Upload coverart
-    if True:
-        for track in db.tracks.find({'album': 'As Mil E Uma Aldeias'}):
-            song = mc.get_track_info(track['gmusic_id'])
-            song['albumArtist'] = track['album_artist']
-            mc.change_song_metadata(song)
+
 
     # Build playlist collection from m3u files
     #if True:
@@ -38,9 +37,6 @@ def main():
         for folder, root, file in func.get_filelist(playlists_home, '.*.m3u$'):
             playlist = classes.Playlists([folder, file], db)
             playlist.update_db(db)
-
-    #func.build_master_playlists(db, mc, gm_playlists)
-
 
     # Sync DB playlists to gmusic
     # if True:
@@ -51,19 +47,17 @@ def main():
             playlist.update_db(db)
 
     # Sync gmusic playlists to DB
-    #if True:
-    if False:
+    if True:
+    #if False:
         for gm_playlist in gm_playlists:
             playlist = classes.Playlists(gm_playlist, db, playlists_home)
             playlist.update_db(db)
 
+    func.build_master_playlists(db, mc, gm_playlists)
 
 
-try:
-    if __name__ == '__main__':
-        warnings.filterwarnings('ignore')
-        main()
-except Exception as e:
-    print '          error:', type(e), e
-    sys.exit(1)
+if __name__ == '__main__':
+    warnings.filterwarnings('ignore')
+    main()
+
 

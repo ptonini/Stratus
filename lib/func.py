@@ -54,9 +54,15 @@ def open_musicmanager(cred):
 
 def open_mobileclient(user, paswd):
     mc = Mobileclient()
-    print 'Connecting to Google Music (MC)',
-    mc.login(user, paswd)
-    return mc
+    try:
+        print 'Connecting to Google Music (MC)',
+        mc.login(user, paswd)
+    except Exception as e:
+        print '          error:', type(e), e
+        sys.exit(1)
+    else:
+        print '          ok'
+        return mc
 
 
 def open_webclient(user, paswd):
